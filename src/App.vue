@@ -5,23 +5,23 @@ import { io } from 'socket.io-client'
 const socket = io('http://localhost:3000', { autoConnect: false })
 
 const opcConectado = ref(false)
-const contPecasPlastico = ref(0)
-const contPecasVidro = ref(0)
-const contPecasMetal = ref(0)
+const contPecasVermelhas = ref(0)
+const contPecasVerdes = ref(0)
+const contPecasAmarelas = ref(0)
 const contPecasTotal = ref(0)
 
-const materials = computed(() => [
-  { name: 'Vidro', amount: contPecasVidro.value, color: '#218b63', icon: 'glass' },
-  { name: 'Metal', amount: contPecasMetal.value, color: '#bc8a24', icon: 'metal' },
-  { name: 'Plástico', amount: contPecasPlastico.value, color: '#d86643', icon: 'plastic' },
+const colors = computed(() => [
+  { name: 'Verde', label: 'Verdes', amount: contPecasVerdes.value, color: '#218b63' },
+  { name: 'Amarelo', label: 'Amarelas', amount: contPecasAmarelas.value, color: '#d19a1d' },
+  { name: 'Vermelho', label: 'Vermelhas', amount: contPecasVermelhas.value, color: '#d6453a' },
 ])
 
 const total = computed(() => contPecasTotal.value)
 
 function atualizarDados(dados) {
-  contPecasPlastico.value = dados.contPecasPlastico
-  contPecasVidro.value = dados.contPecasVidro
-  contPecasMetal.value = dados.contPecasMetal
+  contPecasVermelhas.value = dados.contPecasVermelhas
+  contPecasVerdes.value = dados.contPecasVerdes
+  contPecasAmarelas.value = dados.contPecasAmarelas
   contPecasTotal.value = dados.contPecasTotal
 }
 
@@ -47,8 +47,8 @@ onUnmounted(() => {
       <section class="page-heading">
         <div>
           <p class="eyebrow">LINHA DE TRIAGEM <span>•</span> VISÃO GERAL</p>
-          <h1>Painel de separação</h1>
-          <p class="heading-subtitle">Acompanhamento dos materiais identificados pela automação.</p>
+          <h1>Painel de separação por cores</h1>
+          <p class="heading-subtitle">Acompanhamento das peças identificadas por cor pela automação.</p>
         </div>
         <div class="controller-summary">
   <span class="connection-badge" :class="{ offline: !opcConectado }">
@@ -62,12 +62,12 @@ onUnmounted(() => {
       <section class="project-card" aria-labelledby="project-title">
         <div class="project-copy">
           <div class="section-label"><span class="label-bar"></span> SOBRE O PROJETO</div>
-          <h2 id="project-title">Automação da separação de recicláveis</h2>
+          <h2 id="project-title">Automação da separação de peças por cor</h2>
           <p>
-            O CLP desenvolvido para modernizar a linha integra sensores e atuadores à triagem de vidro,
-            metal e plástico, com apoio de um robô para materiais de maior valor. O monitoramento
-            ajuda a identificar leituras imprecisas e falhas de sincronismo que podem causar contaminação
-            cruzada e paradas na produção.
+            O CLP desenvolvido para modernizar a linha integra sensores ópticos e atuadores à triagem de
+            peças verdes, amarelas e vermelhas, com apoio de um robô para o direcionamento automatizado.
+            O monitoramento ajuda a identificar leituras imprecisas e falhas de sincronismo que podem causar
+            desvios na classificação e paradas na produção.
           </p>
         </div>
         <div class="project-goal">
@@ -78,47 +78,35 @@ onUnmounted(() => {
             </svg>
           </span>
           <div>
-            <strong>Mais precisão na triagem</strong>
-            <p>Monitoramento para reduzir contaminação cruzada e paradas na linha.</p>
+            <strong>Mais precisão na classificação</strong>
+            <p>Monitoramento para reduzir desvios por cor e paradas na linha.</p>
           </div>
         </div>
       </section>
 
-      <section class="materials-section" aria-labelledby="materials-title">
+      <section class="materials-section" aria-labelledby="colors-title">
         <div class="section-heading">
           <div>
-            <h2 id="materials-title">Materiais identificados</h2>
-            <p>Contagem por categoria</p>
+            <h2 id="colors-title">Peças identificadas</h2>
+            <p>Contagem por cor</p>
           </div>
           <span class="live-label"><span></span> DADOS DA AUTOMAÇÃO</span>
         </div>
 
         <div class="material-grid">
-          <article v-for="material in materials" :key="material.name" class="material-card"
-            :style="{ '--material-color': material.color }">
+          <article v-for="item in colors" :key="item.name" class="material-card"
+            :style="{ '--material-color': item.color }">
             <div class="material-card-top">
               <span class="material-icon" aria-hidden="true">
-                <svg v-if="material.icon === 'glass'" viewBox="0 0 24 24" fill="none">
-                  <path d="M8 3h8l-.8 4.5 2 12.5H6.8l2-12.5L8 3Z" />
-                  <path d="M8.5 7.5h7M7.5 16h9" />
-                </svg>
-                <svg v-else-if="material.icon === 'metal'" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 7c0-1.1 3.6-2 8-2s8 .9 8 2v10c0 1.1-3.6 2-8 2s-8-.9-8-2V7Z" />
-                  <path d="M4 7c0 1.1 3.6 2 8 2s8-.9 8-2M4 17c0-1.1 3.6-2 8-2s8 .9 8 2" />
-                </svg>
-                <svg v-else-if="material.icon === 'plastic'" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 3h6v3l2 2v11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V8l2-2V3Z" />
-                  <path d="M9 6h6M7.5 11h9" />
-                </svg>
-                <svg v-else viewBox="0 0 24 24" fill="none">
-                  <path d="M6 3h8l5 5v13H6V3Z" />
-                  <path d="M14 3v5h5M9 13h7M9 17h7" />
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3 4.5 7.2v9.6L12 21l7.5-4.2V7.2L12 3Z" />
+                  <path d="M12 12 4.5 7.2M12 12l7.5-4.8M12 12v9" />
                 </svg>
               </span>
-              <span class="material-tag">COLETADO</span>
+              <span class="material-tag">SEPARADO</span>
             </div>
-            <div class="material-amount">{{ String(material.amount).padStart(2, '0') }}</div>
-            <div class="material-name">Materiais de <strong>{{ material.name }}</strong></div>
+            <div class="material-amount">{{ String(item.amount).padStart(2, '0') }}</div>
+            <div class="material-name">Peças <strong>{{ item.label }}</strong></div>
             <span class="material-accent" aria-hidden="true"></span>
           </article>
         </div>
@@ -128,21 +116,21 @@ onUnmounted(() => {
         <article class="distribution-card">
           <div class="distribution-heading">
             <div>
-              <h2>Resumo da coleta</h2>
-              <p>Distribuição dos materiais identificados</p>
+              <h2>Resumo da separação</h2>
+              <p>Distribuição das peças identificadas por cor</p>
             </div>
             <div class="total-count">
               <strong>{{ String(total).padStart(2, '0') }}</strong>
               <span>UNIDADES</span>
             </div>
           </div>
-          <div class="distribution-bar" role="img" aria-label="Distribuição dos três materiais recicláveis">
-            <span v-for="material in materials" :key="material.name"
-              :style="{ '--material-color': material.color, flex: material.amount }"></span>
+          <div class="distribution-bar" role="img" aria-label="Distribuição das peças nas três cores">
+            <span v-for="item in colors" :key="item.name"
+              :style="{ '--material-color': item.color, flex: item.amount }"></span>
           </div>
           <div class="distribution-legend">
-            <span v-for="material in materials" :key="material.name">
-              <i :style="{ backgroundColor: material.color }"></i>{{ material.name }}
+            <span v-for="item in colors" :key="item.name">
+              <i :style="{ backgroundColor: item.color }"></i>{{ item.name }}
             </span>
           </div>
         </article>
