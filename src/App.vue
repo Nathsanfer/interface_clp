@@ -1,11 +1,43 @@
 <script setup>
-const materials = [
-  { name: 'Vidro', amount: 3, color: '#218b63', icon: 'glass' },
-  { name: 'Metal', amount: 3, color: '#bc8a24', icon: 'metal' },
-  { name: 'Plástico', amount: 3, color: '#d86643', icon: 'plastic' },
-]
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { io } from 'socket.io-client'
 
-const total = materials.reduce((sum, material) => sum + material.amount, 0)
+const socket = io('http://localhost:3000', { autoConnect: false })
+
+const opcConectado = ref(false)
+const contPecasPlastico = ref(0)
+const contPecasVidro = ref(0)
+const contPecasMetal = ref(0)
+const contPecasTotal = ref(0)
+
+const materials = computed(() => [
+  { name: 'Vidro', amount: contPecasVidro.value, color: '#218b63', icon: 'glass' },
+  { name: 'Metal', amount: contPecasMetal.value, color: '#bc8a24', icon: 'metal' },
+  { name: 'Plástico', amount: contPecasPlastico.value, color: '#d86643', icon: 'plastic' },
+])
+
+const total = computed(() => contPecasTotal.value)
+
+function atualizarDados(dados) {
+  contPecasPlastico.value = dados.contPecasPlastico
+  contPecasVidro.value = dados.contPecasVidro
+  contPecasMetal.value = dados.contPecasMetal
+  contPecasTotal.value = dados.contPecasTotal
+}
+
+onMounted(() => {
+  socket.on('opcStatus', status => { opcConectado.value = status })
+  socket.on('dadosProducao', atualizarDados)
+  socket.on('disconnect', () => { opcConectado.value = false })
+  socket.connect()
+})
+
+onUnmounted(() => {
+  socket.off('opcStatus')
+  socket.off('dadosProducao', atualizarDados)
+  socket.off('disconnect')
+  socket.disconnect()
+})
 </script>
 
 <template>
@@ -19,12 +51,12 @@ const total = materials.reduce((sum, material) => sum + material.amount, 0)
           <p class="heading-subtitle">Acompanhamento dos materiais identificados pela automação.</p>
         </div>
         <div class="controller-summary">
-          <span class="connection-badge">
-            <span class="connection-pulse" aria-hidden="true"></span>
-            CLP Conectado
-          </span>
-          <small>Siemens S7-1500 <i>·</i> OPC UA</small>
-        </div>
+  <span class="connection-badge" :class="{ offline: !opcConectado }">
+    <span class="connection-pulse" aria-hidden="true"></span>
+    {{ opcConectado ? 'CLP Conectado' : 'CLP Desconectado' }}
+  </span>
+  <small>Siemens S7-1500 <i>·</i> OPC UA</small>
+</div>
       </section>
 
       <section class="project-card" aria-labelledby="project-title">
@@ -62,12 +94,8 @@ const total = materials.reduce((sum, material) => sum + material.amount, 0)
         </div>
 
         <div class="material-grid">
-          <article
-            v-for="material in materials"
-            :key="material.name"
-            class="material-card"
-            :style="{ '--material-color': material.color }"
-          >
+          <article v-for="material in materials" :key="material.name" class="material-card"
+            :style="{ '--material-color': material.color }">
             <div class="material-card-top">
               <span class="material-icon" aria-hidden="true">
                 <svg v-if="material.icon === 'glass'" viewBox="0 0 24 24" fill="none">
@@ -109,11 +137,8 @@ const total = materials.reduce((sum, material) => sum + material.amount, 0)
             </div>
           </div>
           <div class="distribution-bar" role="img" aria-label="Distribuição dos três materiais recicláveis">
-            <span
-              v-for="material in materials"
-              :key="material.name"
-              :style="{ '--material-color': material.color, flex: material.amount }"
-            ></span>
+            <span v-for="material in materials" :key="material.name"
+              :style="{ '--material-color': material.color, flex: material.amount }"></span>
           </div>
           <div class="distribution-legend">
             <span v-for="material in materials" :key="material.name">
@@ -123,16 +148,10 @@ const total = materials.reduce((sum, material) => sum + material.amount, 0)
         </article>
 
         <article class="status-card" aria-label="Comunicação com o CLP">
-          <div class="communication-summary">
-            <div>
-              <h2>Comunicação</h2>
-              <p>OPC UA <i>·</i> Siemens S7-1500</p>
-            </div>
-            <span class="communication-state">
-              <i aria-hidden="true"></i>
-              Recebendo dados
-            </span>
-          </div>
+          <span class="communication-state" :class="{ offline: !opcConectado }">
+  <i aria-hidden="true"></i>
+  {{ opcConectado ? 'Recebendo dados' : 'Sem comunicação' }}
+</span>
         </article>
       </section>
     </main>
@@ -601,6 +620,26 @@ const total = materials.reduce((sum, material) => sum + material.amount, 0)
 .page-footer b {
   padding: 0 4px;
   color: #bac4bd;
+}
+
+.connection-badge.offline {
+  border-color: #f0d0cb;
+  background: #fdf6f5;
+  color: #a63d2f;
+}
+
+.connection-badge.offline .connection-pulse {
+  background: #d85342;
+  box-shadow: 0 0 0 3px #f6dcd8;
+}
+
+.communication-state.offline {
+  color: #a63d2f;
+}
+
+.communication-state.offline i {
+  background: #d85342;
+  box-shadow: 0 0 0 3px #f6dcd8;
 }
 
 @media (max-width: 760px) {
