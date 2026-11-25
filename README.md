@@ -1,38 +1,158 @@
-# interface_clp
+# Interface CLP — Painel de Separação de Recicláveis
 
-This template should help get you started developing with Vue 3 in Vite.
+Aplicação web para monitoramento em tempo real de uma linha automatizada de triagem de materiais recicláveis (**Vidro**, **Metal** e **Plástico**), integrada a um CLP **Siemens S7-1500** via protocolo **OPC UA**.
 
-## Recommended IDE Setup
+## Arquitetura
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+```text
+CLP Siemens S7-1500 (OPC UA :4840)
+        │  Leitura a cada 500 ms (node-opcua)
+        ▼
+Backend Node.js + Express + Socket.IO (http://localhost:3000)
+        │  WebSocket em tempo real (socket.io)
+        ▼
+Frontend Vue 3 + Vite (http://localhost:5173)
+```
 
-## Recommended Browser Setup
+## Tecnologias
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- **Frontend:** Vue 3, Vite, `socket.io-client`
+- **Backend:** Node.js, Express, `socket.io`, `cors`, `node-opcua`
+- **Automação:** CLP Siemens S7-1500 / TIA Portal (Servidor OPC UA)
 
-## Customize configuration
+## Estrutura do Projeto
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+```text
+interface_clp/
+├── backend/
+│   ├── package.json       # Dependências do servidor OPC UA / Socket.IO
+│   └── server.js          # Cliente OPC UA + servidor HTTP/WebSocket (porta 3000)
+├── src/
+│   ├── App.vue            # Interface principal do painel de separação
+│   ├── main.js            # Ponto de entrada do Vue
+│   └── styles.css         # Estilos globais
+├── index.html
+├── package.json           # Dependências e scripts do frontend
+├── vite.config.js
+└── README.md
+```
 
-## Project Setup
+## Pré-requisitos
 
-```sh
+- **Node.js** `^22.18.0` ou `>=24.12.0` (com `npm`)
+- **CLP Siemens S7-1500** (físico ou simulado via **PLCSIM Advanced**) em modo `RUN`
+- Servidor **OPC UA** ativado no TIA Portal, com segurança `None` habilitada e acessível pela rede
+
+## Configuração OPC UA
+
+Antes de iniciar, confirme em `backend/server.js` se o endereço do CLP, o namespace e os Node IDs correspondem ao seu projeto no TIA Portal:
+
+- **Endpoint:** `opc.tcp://169.254.171.199:4840`
+- **Namespace URI:** `http://vue`
+- **Segurança:** `MessageSecurityMode.None` / `SecurityPolicy.None`
+
+| Material / Dado | Variável no CLP (TIA Portal) | Node ID (`http://vue`) | Campo enviado ao frontend |
+| --------------- | ---------------------------- | ---------------------- | ------------------------- |
+| Plástico        | `contPecasVermelhas`         | `i=3`                  | `contPecasPlastico`       |
+| Vidro           | `contPecasVerdes`            | `i=4`                  | `contPecasVidro`          |
+| Metal           | `contPecasAmarelas`          | `i=5`                  | `contPecasMetal`          |
+| Total           | `contPecasTotal`             | `i=6`                  | `contPecasTotal`          |
+
+> Caso o IP do CLP ou os IDs mudem, ajuste as constantes `ENDPOINT`, `URI_NAMESPACE` e `IDS` em `backend/server.js`.
+
+## Passo a Passo para Execução
+
+### 1. Instalar as dependências
+
+Abra um terminal na pasta raiz do projeto (`interface_clp`) e instale as dependências do **frontend**:
+
+```powershell
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+Em seguida, instale as dependências do **backend**:
 
-```sh
+```powershell
+cd backend
+npm install
+cd ..
+```
+
+### 2. Verificar a comunicação com o CLP
+
+Certifique-se de que o CLP (ou PLCSIM Advanced) está ligado e na mesma faixa de rede do computador. No PowerShell, você pode testar a porta OPC UA (`4840`):
+
+```powershell
+Test-NetConnection -ComputerName 169.254.171.199 -Port 4840
+```
+
+O campo `TcpTestSucceeded` deve retornar `True`.
+
+### 3. Iniciar o Backend (Terminal 1)
+
+No primeiro terminal, entre na pasta `backend` e execute o servidor:
+
+```powershell
+cd backend
+node server.js
+```
+
+Saída esperada:
+
+```text
+Backend em http://localhost:3000
+```
+
+Para confirmar que o backend está lendo o CLP corretamente, acesse http://localhost:3000 no navegador. O retorno deve ser um JSON semelhante a:
+
+```json
+{
+  "backend": "Funcionando",
+  "opcUa": "Conectado",
+  "producao": {
+    "contPecasPlastico": 0,
+    "contPecasVidro": 0,
+    "contPecasMetal": 0,
+    "contPecasTotal": 0
+  }
+}
+```
+
+### 4. Iniciar o Frontend (Terminal 2)
+
+Com o backend rodando, abra um **segundo terminal** na pasta raiz do projeto (`interface_clp`) e execute:
+
+```powershell
 npm run dev
 ```
 
-### Compile and Minify for Production
+Acesse no navegador o endereço exibido pelo Vite (por padrão, http://localhost:5173). O indicador no topo da tela deve exibir **CLP Conectado** e os contadores serão atualizados automaticamente a cada 500 ms.
 
-```sh
+## Build para Produção (Opcional)
+
+Para gerar a versão otimizada do frontend na pasta `dist/`:
+
+```powershell
 npm run build
 ```
+
+Para pré-visualizar o build gerado:
+
+```powershell
+npm run preview
+```
+
+## Solução de Problemas
+
+- **Erro `EADDRINUSE` na porta `3000`:** já existe outra instância do `node server.js` aberta. Feche o terminal anterior (ou pressione `Ctrl + C`) e execute `node server.js` novamente.
+- **`opcUa: "Desconectado"` em http://localhost:3000:**
+  - Verifique se o CLP/PLCSIM está em `RUN` e se o IP em `ENDPOINT` (`backend/server.js`) está correto.
+  - Confirme no TIA Portal se o servidor OPC UA está ativo e aceitando `Security Policy: None`.
+  - Verifique se o adaptador de rede do PC está na mesma sub-rede do CLP (ex.: `169.254.x.x`).
+- **`Falha OPC UA: Namespace não encontrado`:** verifique se a URI da Server Interface no TIA Portal é exatamente `http://vue` (ou atualize `URI_NAMESPACE` em `backend/server.js`).
+- **Backend mostra `"Conectado"`, mas o frontend mostra `CLP Desconectado`:** confirme se o `backend/server.js` está rodando na porta `3000`, reinicie o backend após alterações no arquivo e atualize a página do navegador (`F5`).
+
+## Autoria
+
+- **Instituição:** Faculdade de Tecnologia Senai Roberto Mange — Campinas, SP
+- **Autores:** Kauan Magalhães Piacente · Nathalia Santos Ferreira
