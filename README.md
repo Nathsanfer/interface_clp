@@ -1,6 +1,6 @@
-# Interface CLP — Painel de Separação de Recicláveis
+# Interface CLP — Painel de Separação por Cores
 
-Aplicação web para monitoramento em tempo real de uma linha automatizada de triagem de materiais recicláveis (**Vidro**, **Metal** e **Plástico**), integrada a um CLP **Siemens S7-1500** via protocolo **OPC UA**.
+Aplicação web para monitoramento em tempo real de uma linha automatizada de triagem de peças por cor (**Verde**, **Amarelo** e **Vermelho**), integrada a um CLP **Siemens S7-1500** via protocolo **OPC UA**.
 
 ## Arquitetura
 
@@ -51,12 +51,12 @@ Antes de iniciar, confirme em `backend/server.js` se o endereço do CLP, o names
 - **Namespace URI:** `http://vue`
 - **Segurança:** `MessageSecurityMode.None` / `SecurityPolicy.None`
 
-| Material / Dado | Variável no CLP (TIA Portal) | Node ID (`http://vue`) | Campo enviado ao frontend |
-| --------------- | ---------------------------- | ---------------------- | ------------------------- |
-| Plástico        | `contPecasVermelhas`         | `i=3`                  | `contPecasPlastico`       |
-| Vidro           | `contPecasVerdes`            | `i=4`                  | `contPecasVidro`          |
-| Metal           | `contPecasAmarelas`          | `i=5`                  | `contPecasMetal`          |
-| Total           | `contPecasTotal`             | `i=6`                  | `contPecasTotal`          |
+| Cor / Dado | Variável no CLP (TIA Portal) | Node ID (`http://vue`) | Campo enviado ao frontend |
+| ---------- | ---------------------------- | ---------------------- | ------------------------- |
+| Vermelho   | `contPecasVermelhas`         | `i=3`                  | `contPecasVermelhas`      |
+| Verde      | `contPecasVerdes`            | `i=4`                  | `contPecasVerdes`         |
+| Amarelo    | `contPecasAmarelas`          | `i=5`                  | `contPecasAmarelas`       |
+| Total      | `contPecasTotal`             | `i=6`                  | `contPecasTotal`          |
 
 > Caso o IP do CLP ou os IDs mudem, ajuste as constantes `ENDPOINT`, `URI_NAMESPACE` e `IDS` em `backend/server.js`.
 
@@ -110,9 +110,9 @@ Para confirmar que o backend está lendo o CLP corretamente, acesse http://local
   "backend": "Funcionando",
   "opcUa": "Conectado",
   "producao": {
-    "contPecasPlastico": 0,
-    "contPecasVidro": 0,
-    "contPecasMetal": 0,
+    "contPecasVermelhas": 0,
+    "contPecasVerdes": 0,
+    "contPecasAmarelas": 0,
     "contPecasTotal": 0
   }
 }
