@@ -17,17 +17,17 @@ const URI_NAMESPACE = 'http://vue'
 
 // Mapeamento dos Node IDs do TIA Portal
 const IDS = {
-    plastico: 3, // http://vue;i=3 (vermelhas)
-    vidro: 4,    // http://vue;i=4 (verdes)
-    metal: 5,    // http://vue;i=5 (amarelas)
-    total: 6     // http://vue;i=6 (total)
+    vermelhas: 3, // http://vue;i=3 (contPecasVermelhas)
+    verdes: 4,    // http://vue;i=4 (contPecasVerdes)
+    amarelas: 5,  // http://vue;i=5 (contPecasAmarelas)
+    total: 6      // http://vue;i=6 (contPecasTotal)
 }
 
 let conectadoOpc = false
 let dados = {
-    contPecasPlastico: 0,
-    contPecasVidro: 0,
-    contPecasMetal: 0,
+    contPecasVermelhas: 0,
+    contPecasVerdes: 0,
+    contPecasAmarelas: 0,
     contPecasTotal: 0
 }
 
@@ -69,9 +69,9 @@ async function iniciarOpcUa() {
             try {
                 const valores = await sessao.read(nos)
                 dados = {
-                    contPecasPlastico: Number(valores[0].value.value ?? 0),
-                    contPecasVidro: Number(valores[1].value.value ?? 0),
-                    contPecasMetal: Number(valores[2].value.value ?? 0),
+                    contPecasVermelhas: Number(valores[0].value.value ?? 0),
+                    contPecasVerdes: Number(valores[1].value.value ?? 0),
+                    contPecasAmarelas: Number(valores[2].value.value ?? 0),
                     contPecasTotal: Number(valores[3].value.value ?? 0)
                 }
                 if (!conectadoOpc) {
